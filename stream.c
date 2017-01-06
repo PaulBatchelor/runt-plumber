@@ -104,12 +104,10 @@ int plumbing_parse_stream(plumber_data *pd,
     plumber_word *entry = stream->root.next;
     int rc;
     sporth_func *f;
-    printf("rendering %d pipes\n", stream->size);
     pd->mode = PLUMBER_CREATE;
     for(i = 0; i < stream->size; i++) {
         switch(entry->type) {
             case SPORTH_FLOAT:
-                printf("pushing float %g\n", entry->flt);
                 plumber_add_float(pd, pipes, entry->flt);
                 sporth_stack_push_float(&sporth->stack, entry->flt);
                 break;
@@ -117,7 +115,6 @@ int plumbing_parse_stream(plumber_data *pd,
                 break;
             default:
                 f = &sporth->flist[entry->type];
-                printf("running function %s\n", f->name);
                 rc = f->func(&sporth->stack, f->ud);
                 if(rc == PLUMBER_NOTOK) {
                     return PLUMBER_NOTOK;

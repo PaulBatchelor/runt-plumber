@@ -1,0 +1,21 @@
+stop "loading sporth..." say
+[
+: pd 0 ;
+: hello plumb_new _pd set ;
+: start pd plumb_start ;
+: shutup pd plumb_stop ;
+: bye shutup plumb_del quit ;
+: F pd plumb_float ;
+: ugen pd plumb_ugen ;
+: eval pd plumb_eval ;
+
+: dp "dup" ugen ;
+: do dp eval ;
+
+: sine swap F F "sine" ugen ;
+: add "add" ugen ;
+
+: a440 440 0.2 sine ;
+: a350 350 0.2 sine ;
+: dial a440 a350 add ;
+]

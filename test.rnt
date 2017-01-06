@@ -1,26 +1,18 @@
-stop "./plumber.so" dynload 
+clear
+"./plumber.so" dynload
+"sporth" load
 
-rec 
-: pd 0 ; 
-: setup plumb_new _pd set ;
-: sine 
-setup 
-440 pd plumb_float
-0.5 pd plumb_float
-"sine" pd plumb_ugen
-"dup" pd plumb_ugen
+hello 
 
-pd plumb_print
-pd plumb_start
-pd plumb_eval
-;
+start
 
-: shutup
-pd plumb_stop
-pd plumb_del
-;
+440 0.3 sine do
 
-stop
+a440 do
+a350 do
 
-plumb_new dup plumb_start plumb_stop
+dial do 
 
+shutup
+
+end
