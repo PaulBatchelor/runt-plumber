@@ -9,5 +9,8 @@ plumber.so: plumber.c $(OBJ)
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
+install: plumber.so
+	install plumber.so /usr/local/share/runt/
+
 clean: 
 	rm -rf plumber.so $(OBJ)
