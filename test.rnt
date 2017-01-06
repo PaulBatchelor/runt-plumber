@@ -1,0 +1,18 @@
+stop "./plumber.so" dynload rec
+
+: pd 0 ; 
+: test
+
+plumb_new _pd set 
+
+"440 0.3 sine" 
+pd plumb_eval 
+"350 0.3 sine + dup " 
+pd plumb_eval 
+pd plumb_init
+pd plumb_start
+;
+
+
+
+# pd plumb_del
