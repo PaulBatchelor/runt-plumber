@@ -16,7 +16,9 @@
 #include <soundpipe.h>
 #include <sporth.h>
 
+#include "stream.h"
 #include "audio.h"
+#include "data.h"
 
 static int sporth_jack_in(sporth_stack *stack, void *ud);
 
@@ -136,9 +138,8 @@ int start_audio(plumber_data *pd,
     return SP_OK;
 }
 
-int stop_audio(user_data *ud)
+int stop_audio(sp_jack *jd)
 {
-    sp_jack *jd = &ud->jd;
     jd->run = 0;
     free (jd->ports); 
     jack_client_close(jd->client[0]);

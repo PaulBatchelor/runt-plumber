@@ -1,11 +1,13 @@
 LIBS = -lsporth -lsoundpipe -lsndfile -lm -ldl -ljack -lrunt
 CFLAGS = -fPIC -O3 -shared -Wall -ansi -g
 
-plumber.so: plumber.c audio.o
-	$(CC) $(CFLAGS) plumber.c audio.o -o $@ $(LIBS)
+OBJ=audio.o stream.o
 
-audio.o: audio.c
+plumber.so: plumber.c $(OBJ)
+	$(CC) $(CFLAGS) plumber.c $(OBJ) -o $@ $(LIBS)
+
+%.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean: 
-	rm -rf plumber.so audio.o
+	rm -rf plumber.so $(OBJ)

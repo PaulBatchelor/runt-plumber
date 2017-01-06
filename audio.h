@@ -9,14 +9,8 @@ typedef struct {
     void (*callback)(sp_data *, void *);
     char run;
     const char **ports;
-} sp_jack;
-
-typedef struct {
-    plumber_data pd;
-    sp_data *sp;
-    sp_jack jd;
-} user_data;
+} sp_jack; 
 
 int start_audio(plumber_data *pd, 
         void *ud, void (*callback)(sp_data *, void *), int port);
-int stop_audio(user_data *ud);
+int stop_audio(sp_jack *jd);
