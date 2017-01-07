@@ -1,18 +1,7 @@
-clear
-"./plumber.so" dynload
-"sporth" load
+# "sporth" load hello start
+# bye clear 
+# "sporth" load hello start
+# quit
 
-hello 
-
-start
-
-440 0.3 sine do
-
-a440 do
-a350 do
-
-dial do 
-
-shutup
-
-end
+"sporth" load hello start bye
+clear "sporth" load hello start bye

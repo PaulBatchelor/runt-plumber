@@ -141,8 +141,8 @@ int start_audio(plumber_data *pd,
 int stop_audio(sp_jack *jd)
 {
     jd->run = 0;
-    free (jd->ports); 
     jack_client_close(jd->client[0]);
+    free (jd->ports); 
     free(jd->output_port);
     free(jd->client);
     return SP_OK;

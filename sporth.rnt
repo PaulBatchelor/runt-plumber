@@ -1,10 +1,12 @@
-stop "loading sporth..." say
+stop 
+"./plumber" load
+"loading sporth..." say
 [
 : pd 0 ;
 : hello plumb_new _pd set ;
 : start pd plumb_start ;
 : shutup pd plumb_stop ;
-: bye shutup plumb_del quit ;
+: bye shutup pd plumb_del ;
 : F pd plumb_float ;
 : ugen pd plumb_ugen ;
 : eval pd plumb_eval ;
