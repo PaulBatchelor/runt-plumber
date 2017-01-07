@@ -1,6 +1,7 @@
 #include <soundpipe.h>
 #include <sporth.h>
 #include <stdlib.h>
+#include <string.h>
 #include "stream.h"
 
 int plumber_word_alloc(plumber_data *pd, plumber_word **word)
@@ -16,6 +17,7 @@ int plumber_word_init(plumber_data *pd, plumber_word *word)
     word->type = 0;
     word->next = NULL;
     word->flt = 0.0;
+    word->str = NULL;
     return PLUMBER_OK;
 }
 
@@ -48,8 +50,22 @@ int plumber_stream_append_float(plumber_data *pd,
     plumber_word *word;
     plumber_word_alloc(pd, &word);
     plumber_word_init(pd, word);
-    word->type = 0;
+    word->type = SPORTH_FLOAT;
     word->flt = flt;
+    plumber_stream_append(pd, stream, word);
+    return PLUMBER_OK;
+}
+
+int plumber_stream_append_string(plumber_data *pd, 
+        plumber_stream *stream, const char *str, uint32_t size)
+{
+    plumber_word *word;
+    plumber_word_alloc(pd, &word);
+    plumber_word_init(pd, word);
+    word->type = SPORTH_STRING;
+    word->str = malloc(size + 1);
+    memset(word->str, 0, size + 1);
+    strncpy(word->str, str, size);
     plumber_stream_append(pd, stream, word);
     return PLUMBER_OK;
 }
@@ -105,6 +121,7 @@ int plumbing_parse_stream(plumber_data *pd,
     int rc;
     sporth_func *f;
     pd->mode = PLUMBER_CREATE;
+    char *tmp;
     for(i = 0; i < stream->size; i++) {
         switch(entry->type) {
             case SPORTH_FLOAT:
@@ -112,6 +129,8 @@ int plumbing_parse_stream(plumber_data *pd,
                 sporth_stack_push_float(&sporth->stack, entry->flt);
                 break;
             case SPORTH_STRING:
+                tmp = plumber_add_string(pd, pipes, entry->str);
+                sporth_stack_push_string(&sporth->stack, &tmp);
                 break;
             default:
                 f = &sporth->flist[entry->type];

@@ -2,22 +2,35 @@ stop
 "./plumber" load
 "loading sporth..." say
 [
+: pdc 0 ; 
+: pdm 0 ; 
 : pd 0 ;
-: hello plumb_new _pd set ;
-: start pd plumb_start ;
-: shutup pd plumb_stop ;
-: bye shutup pd plumb_del ;
+
+: bye pd plumb_stop ;
 : F pd plumb_float ;
+: S pd plumb_string ;
 : ugen pd plumb_ugen ;
 : eval pd plumb_eval ;
 
 : dp "dup" ugen ;
 : do dp eval ;
+: floop dup peak F inc ;
+: fargs dup dup 2 + bias 0 swap _floop rep unbias swap 1 + drops ;
+: reset pdc pdm restore ;
 
-: sine swap F F "sine" ugen ;
+: sine "sine" ugen ;
+: fm "fm" ugen ;
+: biscale "biscale" ugen ;
+: mtof "mtof" ugen ;
+: tseq "tseq" ugen ;
+: gen_vals "gen_vals" ugen ; 
+: dmetro "dmetro" ugen ;
+: metro "metro" ugen ;
+
 : add "add" ugen ;
 
-: a440 440 0.2 sine ;
-: a350 350 0.2 sine ;
-: dial a440 a350 add ;
+: hello plumb_new dup _pd set plumb_start 
+c _pdc set m _pdm set ;
 ]
+
+c _pdc set m _pdm set

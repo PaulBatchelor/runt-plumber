@@ -11,6 +11,8 @@
 #include "stream.h"
 #include "data.h"
 
+void plumber_stop_jack(plumber_data *pd, int wait);
+
 static runt_int plumb_data(runt_vm *vm, user_data **ud)
 {
     runt_int rc = RUNT_NOT_OK;
@@ -54,69 +56,18 @@ static void process(sp_data *sp, void *udata){
     }
 }
 
-static runt_int plumb_new(runt_vm *vm, runt_ptr p)
-{
-    runt_int rc;
-    runt_stacklet *s;
-    runt_uint addr;
-    user_data *ud;
-    sp_data *sp;
-    plumber_data *pd;
-
-    size_t size = sizeof(user_data);
-    addr = runt_malloc(vm, size, (void **)&ud);
-    runt_mark_set(vm);
-
-    sp_createn(&sp, 2);
-    pd = &ud->pd; 
-    pd->sp = sp;
-    ud->sp = sp;
-    plumber_register(pd);
-    plumber_init(pd);
-    plumber_parse_string(pd, "0 0");
-    plumber_compute(pd, PLUMBER_INIT);
-    pd->nchan = 2;
-
-    rc = runt_ppush(vm, &s);
-    RUNT_ERROR_CHECK(rc);
-
-    s->f = addr;
-
-    /* initialize plumber stream */
-    plumber_stream_init(pd, &ud->stream);
-
-    return RUNT_OK;
-}
-
-static runt_int plumb_del(runt_vm *vm, runt_ptr p)
-{
-    user_data *ud;
-    runt_int rc;
-    runt_stacklet *s;
-    runt_uint addr;
-
-    rc = runt_ppop(vm, &s);
-    RUNT_ERROR_CHECK(rc);
-    addr = s->f;
-
-    rc = runt_memory_pool_get(vm, addr, (void **)&ud);
-    RUNT_ERROR_CHECK(rc);
-
-    ud->pd.fp = NULL;
-    plumber_clean(&ud->pd);
-    sp_destroy(&ud->sp);
-    
-    return RUNT_OK;
-}
-
 static runt_int plumb_start(runt_vm *vm, runt_ptr p)
 {
-    user_data *ud;
     runt_int rc;
+    user_data *ud;
+    plumber_data *pd;
+    char *argv[] = {"sporth", "-b", "jack", "-c", "2", "-0", "-S"};
+
     rc = plumb_data(vm, &ud);
     RUNT_ERROR_CHECK(rc);
-    runt_print(vm, "Starting up audio engine...\n");
-    start_audio(&ud->pd, ud, process, 6449);
+    pd = &ud->pd;
+
+    sporth_run(pd, 7, argv, ud, process);
     return RUNT_OK;
 }
 
@@ -127,8 +78,8 @@ static runt_int plumb_stop(runt_vm *vm, runt_ptr p)
 
     rc = plumb_data(vm, &ud);
     RUNT_ERROR_CHECK(rc);
-    runt_print(vm, "Stopping audio engine...\n");
-    stop_audio(&ud->jd);
+
+    plumber_stop_jack(&ud->pd, 0);
     return RUNT_OK;
 }
 
@@ -146,6 +97,23 @@ static runt_int plumb_float(runt_vm *vm, runt_ptr p)
 
     plumber_stream_append_float(&ud->pd, &ud->stream, s->f);
 
+    return RUNT_OK;
+}
+
+static runt_int plumb_string(runt_vm *vm, runt_ptr p)
+{
+    runt_int rc;
+    runt_stacklet *s;
+    user_data *ud;
+    const char *str;
+
+    rc = plumb_data(vm, &ud);
+    RUNT_ERROR_CHECK(rc);
+
+    rc = runt_ppop(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+    str = runt_to_string(s->p);
+    plumber_stream_append_string(&ud->pd, &ud->stream, str, strlen(str));
     return RUNT_OK;
 }
 
@@ -227,15 +195,50 @@ static runt_int plumb_eval(runt_vm *vm, runt_ptr p)
     return rc;
 }
 
+static runt_int plumb(runt_vm *vm, runt_ptr p)
+{
+    runt_int rc;
+    runt_stacklet *s;
+    runt_uint addr;
+    user_data *ud;
+
+    addr = runt_malloc(vm, sizeof(user_data), (void **)&ud);
+    runt_mark_set(vm);
+    rc = runt_ppush(vm, &s);
+    plumber_init(&ud->pd);
+    RUNT_ERROR_CHECK(rc);
+    s->f = addr;
+
+    plumber_stream_init(&ud->pd, &ud->stream);
+    return RUNT_OK; 
+}
+
+static runt_int plumb_run(runt_vm *vm, runt_ptr p)
+{
+    runt_int rc;
+    user_data *ud;
+    plumber_data *pd;
+    char *argv[] = {"sporth", "-b", "jack", "-c", "2", "-0"};
+
+    rc = plumb_data(vm, &ud);
+    RUNT_ERROR_CHECK(rc);
+    pd = &ud->pd;
+
+    sporth_run(pd, 6, argv, ud, process);
+    return RUNT_OK;
+}
+
 void runt_plugin_init(runt_vm *vm)
 {
-    runt_word_define(vm, "plumb_new", 9, plumb_new);
-    runt_word_define(vm, "plumb_del", 9, plumb_del);
+    runt_word_define(vm, "plumb_new", 9, plumb);
     runt_word_define(vm, "plumb_start", 11, plumb_start);
     runt_word_define(vm, "plumb_stop", 10, plumb_stop);
     runt_word_define(vm, "plumb_float", 11, plumb_float);
+    runt_word_define(vm, "plumb_string", 12, plumb_string);
     runt_word_define(vm, "plumb_ugen", 10, plumb_ugen);
     runt_word_define(vm, "plumb_print", 11, plumb_print);
     runt_word_define(vm, "plumb_clear", 11, plumb_clear);
     runt_word_define(vm, "plumb_eval", 10, plumb_eval);
+    runt_word_define(vm, "plumb", 5, plumb);
+    runt_word_define(vm, "plumb_run", 9, plumb_run);
 }

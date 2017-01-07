@@ -3,5 +3,38 @@
 # "sporth" load hello start
 # quit
 
-"sporth" load hello start bye
-clear "sporth" load hello start bye
+"sporth" load hello 
+
+reset 
+"tone" undef
+[ : tone mtof 0.5 F sine ; ]
+drop
+
+"seq" S "60 62 71" S gen_vals 10 F metro 0 F "seq" S tseq tone do
+
+60 F mtof 0.5 F sine do
+
+
+reset
+[ : dtone 440 0.5 2 fargs sine 350 0.5 2 fargs sine add ; ] 
+dtone do
+0 F do
+"dtone" undef
+
+6 1 2 fargs sine 410 480 2 fargs biscale 0.5 1 1 1 4 fargs fm do
+
+0 F do
+
+
+bye quit
+
+hello
+ 
+440 0.3 sine 350 0.3 sine add do
+
+0 F do
+
+440 0.5 1 3 6 fm do
+
+bye
+quit
