@@ -59,37 +59,35 @@ Cut it out:
 
     > "0 0" 0 peak dup plumb_parse plumb_eval 
 
-### Building new words 
+Say good bye:
 
-This is too much typing and is quite slow and tedious. 
-Defining words and procedures helps to build
-up abstractions. The first thing to go will be to replace "0 peak" with
-a word called *pd* :
+    > 0 peak plumb_stop
+    > quit
 
-    > [ : pd 0 ; ] 0 peak _pd set
-    > pd p
-    32474
-
-Using this newly defined word, a new procedure can be made for generated a 
-sine wave with a variable frequency:
-
-    > [ : sine pd plumb_float "0.3 sine" pd plumb_parse ; ]
-
-
-For added convenience, a word like "eval" could be an abbreviated form of 
-plumb_eval, which automatically makes incoming code stereo:
-
-    > [ : eval "dup" pd plumb_ugen pd plumb_eval ; ]
-
-Now a sine can be constructed a lot faster :
-
-    > 440 sine eval ;
-
-More procedures can be added to make dialtones and to turn off sound:
-
-    > [ : dial 440 sine 350 sine "add" pd plumb_ugen ; ]
-    > [ : mute 0 pd plumb_float eval ; ]
 
 ### Using the Sporth dictionary
 
-    Coming soon! 
+To save on typing, a dictionary has been made in the file 
+*sporth.rnt*. These words are  designed to mimic the look and feel of Sporth
+as closely as possible while still maintaining Runt-Sporth interoperability.
+
+Below is how one could play and stop a sine in realtime. 
+Open up irunt in the same directory as runt-plumber and do the following:
+
+    > "sporth" load
+    loading sporth...
+    > hello
+    > 440 0.5 2 fargs sine
+    > do
+    > mute
+    > bye
+    > quit
+
+- **"sporth" load"** loads the dictionary *sporth.rnt*
+- the world **hello** initializes and starts up JACK
+- **fargs** is a word that makes it easy to convert runt floats into sporth
+floats 
+- **do** evaluates the code on the stack
+- **mute** turns off the sound
+- **bye** stop the audio and cleans up
+- **quite** leaves irunt
