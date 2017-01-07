@@ -190,7 +190,6 @@ static runt_int plumb_eval(runt_vm *vm, runt_ptr p)
     pd = &ud->pd;
 
     pd->recompile = 1;
-    /*rc = plumber_recompile_stream(&ud->pd, stream);*/
 
     return rc;
 }
@@ -228,6 +227,28 @@ static runt_int plumb_run(runt_vm *vm, runt_ptr p)
     return RUNT_OK;
 }
 
+static runt_int plumb_parse(runt_vm *vm, runt_ptr p) 
+{
+    runt_int rc;
+    runt_stacklet *s;
+    const char *str;
+    user_data *ud;
+    plumber_data *pd;
+    
+
+    rc = plumb_data(vm, &ud);
+    RUNT_ERROR_CHECK(rc);
+    pd = &ud->pd;
+
+    rc = runt_ppop(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+    str = runt_to_string(s->p);
+  
+    plumber_stream_parse_string(pd, &ud->stream, str);
+
+    return RUNT_OK;
+}
+
 void runt_plugin_init(runt_vm *vm)
 {
     runt_word_define(vm, "plumb_new", 9, plumb);
@@ -239,6 +260,6 @@ void runt_plugin_init(runt_vm *vm)
     runt_word_define(vm, "plumb_print", 11, plumb_print);
     runt_word_define(vm, "plumb_clear", 11, plumb_clear);
     runt_word_define(vm, "plumb_eval", 10, plumb_eval);
-    runt_word_define(vm, "plumb", 5, plumb);
+    runt_word_define(vm, "plumb_parse", 11, plumb_parse);
     runt_word_define(vm, "plumb_run", 9, plumb_run);
 }

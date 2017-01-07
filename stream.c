@@ -167,3 +167,54 @@ int plumber_recompile_stream(plumber_data *pd, plumber_stream *stream)
     plumber_swap(pd, error);
     return PLUMBER_OK;
 }
+
+static int cheap_string_append(plumber_data *pd, plumber_stream *stream, 
+    char *str, int32_t len) {
+    const char *key = str;
+    return plumber_stream_append_string(pd, stream, key, len);
+}
+
+static int cheap_ugen_append(plumber_data *pd, plumber_stream *stream, 
+    char *str) {
+    const char *ugen = str;
+    return plumber_stream_append_ugen(pd, stream, ugen);
+}
+int plumber_stream_parse_string(plumber_data *pd, 
+        plumber_stream *stream, const char *str)
+{
+    char *out; 
+    char *tmp;
+    uint32_t pos = 0;
+    uint32_t size = (uint32_t)strlen(str);
+    uint32_t len = 0;
+    SPFLOAT flt;
+
+    while(pos < size) {
+        out = sporth_tokenizer((char *)str, size, &pos);
+        len = (uint32_t)strlen(out);
+        switch(sporth_lexer(out, len)) {
+            case SPORTH_FLOAT:
+                flt = atof(out);
+                plumber_stream_append_float(pd, stream, flt);
+                break;
+            case SPORTH_STRING:
+                tmp = out;
+                tmp[len - 1] = '\0';
+                tmp++;
+                cheap_string_append(pd, stream, tmp, strlen(tmp));
+                break;
+            case SPORTH_WORD:
+                tmp = out;
+                /* don't truncate the last character here like the string */
+                tmp[len] = '\0';
+                tmp++;
+                cheap_string_append(pd, stream, tmp, strlen(tmp));
+                break;
+            default:
+                cheap_ugen_append(pd, stream, out);
+                break;
+        }
+        free(out);    
+    }
+    return PLUMBER_OK;
+}

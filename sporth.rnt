@@ -11,12 +11,14 @@ stop
 : S pd plumb_string ;
 : ugen pd plumb_ugen ;
 : eval pd plumb_eval ;
+: parse pd plumb_parse ;
 
 : dp "dup" ugen ;
 : do dp eval ;
 : floop dup peak F inc ;
 : fargs dup dup 2 + bias 0 swap _floop rep unbias swap 1 + drops ;
 : reset pdc pdm restore ;
+: mute 0 F do ;
 
 : sine "sine" ugen ;
 : fm "fm" ugen ;
