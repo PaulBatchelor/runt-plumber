@@ -17,6 +17,8 @@ handy words to use, including many words in Sporth.
 
 ## Installation
 
+At the moment, Runt-plumber is Linux only (sorry, Nick!)
+
 Runt-plumber needs the following dependencies:
 - Runt
 - Sporth (with JACK enabled)
