@@ -85,9 +85,9 @@ Open up irunt in the same directory as runt-plumber and do the following:
 
 - **"sporth" load"** loads the dictionary *sporth.rnt*
 - the world **hello** initializes and starts up JACK
-- **fargs** is a word that makes it easy to convert runt floats into sporth
-floats 
-- **do** evaluates the code on the stack
-- **mute** turns off the sound
-- **bye** stop the audio and cleans up
-- **quite** leaves irunt
+- taking in a single argument, **fargs** is a word that makes it 
+- easy to convert runt floats into sporth floats 
+- the word **do** evaluates the code on the stack
+- the word **mute** turns off the sound
+- the word **bye** stop the audio and cleans up
+- the word **quite** leaves irunt
