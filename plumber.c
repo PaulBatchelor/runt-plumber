@@ -7,7 +7,6 @@
 #include <jack/jack.h>
 #include <stdlib.h>
 
-#include "audio.h"
 #include "stream.h"
 #include "data.h"
 

@@ -83,7 +83,7 @@ Open up irunt in the same directory as runt-plumber and do the following:
     > bye
     > quit
 
-- **"sporth" load"** loads the dictionary *sporth.rnt*
+- **"sporth" load** loads the dictionary *sporth.rnt*
 - the world **hello** initializes and starts up JACK
 - taking in a single argument, **fargs** is a word that makes it 
 - easy to convert runt floats into sporth floats 
