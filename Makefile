@@ -10,6 +10,7 @@ plumber.so: plumber.c $(OBJ)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 install: plumber.so
+	mkdir -p /usr/local/share/runt/
 	install plumber.so /usr/local/share/runt/
 	install sporth.rnt /usr/local/share/runt/
 
