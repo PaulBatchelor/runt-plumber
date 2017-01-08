@@ -11,6 +11,7 @@ plumber.so: plumber.c $(OBJ)
 
 install: plumber.so
 	install plumber.so /usr/local/share/runt/
+	install sporth.rnt /usr/local/share/runt/
 
 clean: 
 	rm -rf plumber.so $(OBJ)

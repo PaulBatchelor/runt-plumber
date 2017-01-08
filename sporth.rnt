@@ -1,5 +1,5 @@
 stop 
-"./plumber" load
+"plumber" load
 "loading sporth..." say
 [
 : pdc 0 ; 
@@ -32,6 +32,9 @@ stop
 : add "add" ugen ;
 
 : hello plumb_new dup _pd set plumb_start 
+c _pdc set m _pdm set ;
+
+: hello_pi plumb_pi dup _pd set plumb_start 
 c _pdc set m _pdm set ;
 ]
 
