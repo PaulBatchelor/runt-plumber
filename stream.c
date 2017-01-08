@@ -108,6 +108,7 @@ int plumber_stream_append_data(plumber_data *pd,
     word->type = PLUMBER_STREAM_DATA;
     word->ud = ud;
     word->str = malloc(size + 1);
+    memset(word->str, 0, size + 1);
     strncpy(word->str, name, size);
     plumber_stream_append(pd, stream, word);
     return PLUMBER_OK;
