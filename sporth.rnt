@@ -6,6 +6,7 @@ stop
 : pdm 0 ; 
 : pd 0 ;
 
+: hello plumb_new dup _pd set plumb_start ;
 : bye pd plumb_stop ;
 : F pd plumb_float ;
 : S pd plumb_string ;
@@ -17,8 +18,8 @@ stop
 : do dp eval ;
 : floop dup peak F inc ;
 : fargs dup dup 2 + bias 0 swap _floop rep unbias swap 1 + drops ;
-: reset pdc pdm restore ;
 : mute 0 F do ;
+: reset mute bye clear ;
 
 : sine "sine" ugen ;
 : fm "fm" ugen ;
@@ -31,8 +32,6 @@ stop
 
 : add "add" ugen ;
 
-: hello plumb_new dup _pd set plumb_start 
-c _pdc set m _pdm set ;
 
 : hello_pi plumb_pi dup _pd set plumb_start 
 c _pdc set m _pdm set ;
