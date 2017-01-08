@@ -12,6 +12,10 @@
 
 void plumber_stop_jack(plumber_data *pd, int wait);
 
+/* global data struct for pi workaround */
+
+static plumber_data g_pd;
+
 static runt_int plumb_data(runt_vm *vm, user_data **ud)
 {
     runt_int rc = RUNT_NOT_OK;
@@ -31,16 +35,16 @@ static runt_int plumb_data(runt_vm *vm, user_data **ud)
 
 static void process(sp_data *sp, void *udata){
     user_data *ud = udata;
-    plumber_data *pd = &ud->pd;
+    plumber_data *pd = ud->pd;
     SPFLOAT out = 0;
     int chan;
 
     if(pd->recompile) {
-        plumber_recompile_stream(&ud->pd, &ud->stream);
+        plumber_recompile_stream(pd, &ud->stream);
         pd->recompile = 0;
         /* clear the stream */
-        plumber_stream_destroy(&ud->pd, &ud->stream);
-        plumber_stream_init(&ud->pd, &ud->stream);
+        plumber_stream_destroy(pd, &ud->stream);
+        plumber_stream_init(pd, &ud->stream);
     }
     
     plumber_compute(pd, PLUMBER_COMPUTE);
@@ -64,7 +68,7 @@ static runt_int plumb_start(runt_vm *vm, runt_ptr p)
 
     rc = plumb_data(vm, &ud);
     RUNT_ERROR_CHECK(rc);
-    pd = &ud->pd;
+    pd = ud->pd;
 
     sporth_run(pd, 7, argv, ud, process);
     return RUNT_OK;
@@ -78,7 +82,7 @@ static runt_int plumb_stop(runt_vm *vm, runt_ptr p)
     rc = plumb_data(vm, &ud);
     RUNT_ERROR_CHECK(rc);
 
-    plumber_stop_jack(&ud->pd, 0);
+    plumber_stop_jack(ud->pd, 0);
     return RUNT_OK;
 }
 
@@ -94,7 +98,7 @@ static runt_int plumb_float(runt_vm *vm, runt_ptr p)
     rc = runt_ppop(vm, &s);
     RUNT_ERROR_CHECK(rc);
 
-    plumber_stream_append_float(&ud->pd, &ud->stream, s->f);
+    plumber_stream_append_float(ud->pd, &ud->stream, s->f);
 
     return RUNT_OK;
 }
@@ -112,7 +116,7 @@ static runt_int plumb_string(runt_vm *vm, runt_ptr p)
     rc = runt_ppop(vm, &s);
     RUNT_ERROR_CHECK(rc);
     str = runt_to_string(s->p);
-    plumber_stream_append_string(&ud->pd, &ud->stream, str, strlen(str));
+    plumber_stream_append_string(ud->pd, &ud->stream, str, strlen(str));
     return RUNT_OK;
 }
 
@@ -130,7 +134,7 @@ static runt_int plumb_ugen(runt_vm *vm, runt_ptr p)
     RUNT_ERROR_CHECK(rc);
     key = runt_to_string(s->p);
 
-    rc = plumber_stream_append_ugen(&ud->pd, &ud->stream, key);
+    rc = plumber_stream_append_ugen(ud->pd, &ud->stream, key);
 
     if(rc == PLUMBER_NOTOK) {
         runt_print(vm, "Could not find ugen '%s'\n", key);
@@ -171,9 +175,9 @@ static runt_int plumb_clear(runt_vm *vm, runt_ptr p)
     RUNT_ERROR_CHECK(rc);
     stream = &ud->stream;
 
-    plumber_stream_destroy(&ud->pd, stream);
+    plumber_stream_destroy(ud->pd, stream);
     /* reinitialize */
-    plumber_stream_init(&ud->pd, stream);
+    plumber_stream_init(ud->pd, stream);
 
     return RUNT_OK;
 }
@@ -186,7 +190,7 @@ static runt_int plumb_eval(runt_vm *vm, runt_ptr p)
 
     rc = plumb_data(vm, &ud);
     RUNT_ERROR_CHECK(rc);
-    pd = &ud->pd;
+    pd = ud->pd;
 
     pd->recompile = 1;
 
@@ -203,12 +207,34 @@ static runt_int plumb(runt_vm *vm, runt_ptr p)
     addr = runt_malloc(vm, sizeof(user_data), (void **)&ud);
     runt_mark_set(vm);
     rc = runt_ppush(vm, &s);
-    plumber_init(&ud->pd);
+    /* internal memory set to pointer... needed because of alignment issues
+     * on raspberry pi ARM */
+    ud->pd = &ud->ipd;
+    plumber_init(ud->pd);
     RUNT_ERROR_CHECK(rc);
     s->f = addr;
 
-    plumber_stream_init(&ud->pd, &ud->stream);
+    plumber_stream_init(ud->pd, &ud->stream);
     return RUNT_OK; 
+}
+
+static runt_int plumb_pi(runt_vm *vm, runt_ptr p)
+{
+    runt_int rc;
+    runt_stacklet *s;
+    runt_uint addr;
+    user_data *ud;
+
+    addr = runt_malloc(vm, sizeof(user_data), (void **)&ud);
+    runt_mark_set(vm);
+    rc = runt_ppush(vm, &s);
+    ud->pd = &g_pd;
+    plumber_init(ud->pd);
+    RUNT_ERROR_CHECK(rc);
+    s->f = addr;
+
+    plumber_stream_init(ud->pd, &ud->stream);
+    return RUNT_OK;
 }
 
 static runt_int plumb_run(runt_vm *vm, runt_ptr p)
@@ -220,7 +246,7 @@ static runt_int plumb_run(runt_vm *vm, runt_ptr p)
 
     rc = plumb_data(vm, &ud);
     RUNT_ERROR_CHECK(rc);
-    pd = &ud->pd;
+    pd = ud->pd;
 
     sporth_run(pd, 6, argv, ud, process);
     return RUNT_OK;
@@ -237,7 +263,7 @@ static runt_int plumb_parse(runt_vm *vm, runt_ptr p)
 
     rc = plumb_data(vm, &ud);
     RUNT_ERROR_CHECK(rc);
-    pd = &ud->pd;
+    pd = ud->pd;
 
     rc = runt_ppop(vm, &s);
     RUNT_ERROR_CHECK(rc);
@@ -251,6 +277,7 @@ static runt_int plumb_parse(runt_vm *vm, runt_ptr p)
 void runt_plugin_init(runt_vm *vm)
 {
     runt_word_define(vm, "plumb_new", 9, plumb);
+    runt_word_define(vm, "plumb_pi", 8, plumb_pi);
     runt_word_define(vm, "plumb_start", 11, plumb_start);
     runt_word_define(vm, "plumb_stop", 10, plumb_stop);
     runt_word_define(vm, "plumb_float", 11, plumb_float);
