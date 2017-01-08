@@ -5,6 +5,8 @@
 
 "sporth" load hello 
 
+"0.5 sine" parse do
+"hello" say 
 reset 
 "tone" undef
 [ : tone mtof 0.5 F sine ; ]

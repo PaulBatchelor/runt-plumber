@@ -23,7 +23,9 @@ int plumber_word_init(plumber_data *pd, plumber_word *word)
 
 int plumber_word_free(plumber_data *pd, plumber_word *word)
 {
-    if(word->type == SPORTH_STRING) free(word->str);
+    if(word->type == SPORTH_STRING || word->type == PLUMBER_STREAM_DATA) {
+        free(word->str);
+    }
     free(word);
     return PLUMBER_OK;
 }
@@ -97,6 +99,19 @@ int plumber_stream_append_ugen(plumber_data *pd,
     return PLUMBER_OK;
 }
 
+int plumber_stream_append_data(plumber_data *pd, 
+        plumber_stream *stream, const char *name, uint32_t size, void *ud)
+{
+    plumber_word *word;
+    plumber_word_alloc(pd, &word);
+    plumber_word_init(pd, word);
+    word->type = PLUMBER_STREAM_DATA;
+    word->ud = ud;
+    word->str = malloc(size + 1);
+    strncpy(word->str, name, size);
+    plumber_stream_append(pd, stream, word);
+    return PLUMBER_OK;
+}
 
 int plumber_stream_destroy(plumber_data *pd, plumber_stream *stream)
 {
@@ -131,6 +146,12 @@ int plumbing_parse_stream(plumber_data *pd,
             case SPORTH_STRING:
                 tmp = plumber_add_string(pd, pipes, entry->str);
                 sporth_stack_push_string(&sporth->stack, &tmp);
+                break;
+            case PLUMBER_STREAM_DATA:
+                plumber_ftmap_delete(pd, 0);
+                plumber_print(pd, "adding userdata %s\n", entry->str);
+                plumber_ftmap_add_userdata(pd, entry->str, entry->ud);
+                plumber_ftmap_delete(pd, 1);
                 break;
             default:
                 f = &sporth->flist[entry->type];

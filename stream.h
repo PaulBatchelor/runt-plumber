@@ -1,7 +1,10 @@
+#define PLUMBER_STREAM_DATA SPORTH_LAST + 1
+
 typedef struct plumber_word {
     uint32_t type;
     SPFLOAT flt;
     char *str;
+    void *ud;
     struct plumber_word *next;
 } plumber_word;
 
@@ -29,6 +32,8 @@ int plumber_stream_append_ugen(plumber_data *pd,
         plumber_stream *stream, const char *key);
 int plumber_stream_append_float(plumber_data *pd, 
         plumber_stream *stream, SPFLOAT flt);
+int plumber_stream_append_data(plumber_data *pd, 
+        plumber_stream *stream, const char *name, uint32_t size, void *ud);
 
 /* get the function id of a ugen */
 int plumber_str_to_ugen(plumber_data *pd, const char *str, uint32_t *id);

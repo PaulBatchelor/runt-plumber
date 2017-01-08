@@ -12,6 +12,8 @@
 
 void plumber_stop_jack(plumber_data *pd, int wait);
 
+int plumber_set_var(plumber_data *pd, char *name, SPFLOAT *var);
+
 /* global data struct for pi workaround */
 
 static plumber_data g_pd;
@@ -215,6 +217,9 @@ static runt_int plumb(runt_vm *vm, runt_ptr p)
     s->f = addr;
 
     plumber_stream_init(ud->pd, &ud->stream);
+
+    /* set log handle */
+    ud->pd->log = vm->fp;
     return RUNT_OK; 
 }
 
@@ -274,6 +279,41 @@ static runt_int plumb_parse(runt_vm *vm, runt_ptr p)
     return RUNT_OK;
 }
 
+static runt_int plumb_var(runt_vm *vm, runt_ptr p)
+{
+    runt_int rc;
+    runt_stacklet *s;
+    const char *varname;
+    runt_cell *cell;
+    SPFLOAT *var;
+    runt_uint id;
+    user_data *ud;
+    plumber_data *pd;
+
+    rc = plumb_data(vm, &ud);
+    RUNT_ERROR_CHECK(rc);
+    pd = ud->pd;
+
+    rc = runt_ppop(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+    varname = runt_to_string(s->p);
+
+    rc = runt_ppop(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+    id = s->f;
+
+    rc = runt_cell_pool_get_cell(vm, id + 1, &cell);
+    RUNT_ERROR_CHECK(rc);
+   
+    var = (SPFLOAT *)cell->p.ud;
+
+    runt_print(vm, "Creating sporth variable %s, length %d\n", 
+            varname, strlen(varname));
+
+    plumber_stream_append_data(pd, &ud->stream, varname, strlen(varname), var);
+    return RUNT_OK;
+}
+
 void runt_plugin_init(runt_vm *vm)
 {
     runt_word_define(vm, "plumb_new", 9, plumb);
@@ -288,4 +328,5 @@ void runt_plugin_init(runt_vm *vm)
     runt_word_define(vm, "plumb_eval", 10, plumb_eval);
     runt_word_define(vm, "plumb_parse", 11, plumb_parse);
     runt_word_define(vm, "plumb_run", 9, plumb_run);
+    runt_word_define(vm, "plumb_var", 9, plumb_var);
 }
