@@ -1,18 +1,26 @@
 LIBS = -lsporth -lsoundpipe -lsndfile -lm -ldl -ljack -lrunt
 CFLAGS = -fPIC -O3 -shared -Wall -ansi -g
 
-OBJ = stream.o
+OBJ = stream.o plumber.o
 
-plumber.so: plumber.c $(OBJ)
-	$(CC) $(CFLAGS) plumber.c $(OBJ) -o $@ $(LIBS)
+NAME = plumber
+
+default: librunt_$(NAME).a ugen.so
+
+librunt_$(NAME).a: $(OBJ)
+	$(AR) rcs $@ $(OBJ)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-install: plumber.so
-	mkdir -p /usr/local/share/runt/
-	install plumber.so /usr/local/share/runt/
-	install sporth.rnt /usr/local/share/runt/
+ugen.so: ugen.c $(OBJ)
+	$(CC) $(CFLAGS) -fPIC -shared ugen.c $(OBJ) -o $@ $(LIBS) 
+
+install: librunt_$(NAME).a
+	mkdir -p ~/.runt/lib
+	mkdir -p ~/.runt/include
+	cp librunt_$(NAME).a ~/.runt/lib
+	cp runt_plumber.h ~/.runt/include
 
 clean: 
-	rm -rf plumber.so $(OBJ)
+	rm -rf librunt_$(NAME).a $(OBJ) ugen.so

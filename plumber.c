@@ -9,14 +9,11 @@
 
 #include "stream.h"
 #include "data.h"
+#include "runt_plumber.h"
 
 void plumber_stop_jack(plumber_data *pd, int wait);
 
 int plumber_set_var(plumber_data *pd, char *name, SPFLOAT *var);
-
-/* global data struct for pi workaround */
-
-static plumber_data g_pd;
 
 static runt_int plumb_data(runt_vm *vm, user_data **ud)
 {
@@ -201,45 +198,21 @@ static runt_int plumb_eval(runt_vm *vm, runt_ptr p)
 
 static runt_int plumb(runt_vm *vm, runt_ptr p)
 {
+/*
     runt_int rc;
     runt_stacklet *s;
-    runt_uint addr;
     user_data *ud;
 
-    addr = runt_malloc(vm, sizeof(user_data), (void **)&ud);
     runt_mark_set(vm);
     rc = runt_ppush(vm, &s);
-    /* internal memory set to pointer... needed because of alignment issues
-     * on raspberry pi ARM */
-    ud->pd = &ud->ipd;
     plumber_init(ud->pd);
     RUNT_ERROR_CHECK(rc);
-    s->f = addr;
 
     plumber_stream_init(ud->pd, &ud->stream);
 
-    /* set log handle */
     ud->pd->log = vm->fp;
+*/
     return RUNT_OK; 
-}
-
-static runt_int plumb_pi(runt_vm *vm, runt_ptr p)
-{
-    runt_int rc;
-    runt_stacklet *s;
-    runt_uint addr;
-    user_data *ud;
-
-    addr = runt_malloc(vm, sizeof(user_data), (void **)&ud);
-    runt_mark_set(vm);
-    rc = runt_ppush(vm, &s);
-    ud->pd = &g_pd;
-    plumber_init(ud->pd);
-    RUNT_ERROR_CHECK(rc);
-    s->f = addr;
-
-    plumber_stream_init(ud->pd, &ud->stream);
-    return RUNT_OK;
 }
 
 static runt_int plumb_run(runt_vm *vm, runt_ptr p)
@@ -314,19 +287,173 @@ static runt_int plumb_var(runt_vm *vm, runt_ptr p)
     return RUNT_OK;
 }
 
-void runt_plugin_init(runt_vm *vm)
+static void plumb_define(runt_vm *vm, 
+        runt_ptr p,
+        const char *word,
+        runt_uint size,
+        runt_proc proc)
 {
-    runt_word_define(vm, "plumb_new", 9, plumb);
-    runt_word_define(vm, "plumb_pi", 8, plumb_pi);
-    runt_word_define(vm, "plumb_start", 11, plumb_start);
-    runt_word_define(vm, "plumb_stop", 10, plumb_stop);
-    runt_word_define(vm, "plumb_float", 11, plumb_float);
-    runt_word_define(vm, "plumb_string", 12, plumb_string);
-    runt_word_define(vm, "plumb_ugen", 10, plumb_ugen);
-    runt_word_define(vm, "plumb_print", 11, plumb_print);
-    runt_word_define(vm, "plumb_clear", 11, plumb_clear);
-    runt_word_define(vm, "plumb_eval", 10, plumb_eval);
-    runt_word_define(vm, "plumb_parse", 11, plumb_parse);
-    runt_word_define(vm, "plumb_run", 9, plumb_run);
-    runt_word_define(vm, "plumb_var", 9, plumb_var);
+    runt_uint word_id;
+    word_id = runt_word_define(vm, word, size, proc);
+    runt_word_bind_ptr(vm, word_id, p);
+}
+
+
+runt_int runt_load_plumber(runt_vm *vm)
+{
+    user_data *ud;
+    runt_malloc(vm, sizeof(user_data), (void **)&ud);
+    runt_ptr p = runt_mk_cptr(vm, ud);
+
+    plumb_define(vm, p, "plumb_new", 9, plumb);
+    plumb_define(vm, p, "plumb_start", 11, plumb_start);
+    plumb_define(vm, p, "plumb_stop", 10, plumb_stop);
+    plumb_define(vm, p, "plumb_float", 11, plumb_float);
+    plumb_define(vm, p, "plumb_string", 12, plumb_string);
+    plumb_define(vm, p, "plumb_ugen", 10, plumb_ugen);
+    plumb_define(vm, p, "plumb_print", 11, plumb_print);
+    plumb_define(vm, p, "plumb_clear", 11, plumb_clear);
+    plumb_define(vm, p, "plumb_eval", 10, plumb_eval);
+    plumb_define(vm, p, "plumb_parse", 11, plumb_parse);
+    plumb_define(vm, p, "plumb_run", 9, plumb_run);
+    plumb_define(vm, p, "plumb_var", 9, plumb_var);
+    return RUNT_OK;
+}
+
+typedef struct {
+    runt_vm vm;
+    unsigned char *buf;
+    runt_cell *cells;
+    runt_cell *create;
+    runt_cell *init;
+    runt_cell *compute;
+    runt_cell *destroy;
+} sporth_runt_data;
+
+static void mk_runt(sporth_runt_data *rd)
+{
+    
+    rd->buf = malloc(RUNT_MEGABYTE * 2);
+    rd->cells = malloc(sizeof(runt_cell) * 1024);
+
+    runt_cell_pool_set(&rd->vm, rd->cells, 1024);
+    runt_cell_pool_init(&rd->vm);
+
+    runt_memory_pool_set(&rd->vm, rd->buf, RUNT_MEGABYTE * 2);
+    runt_init(&rd->vm);
+}
+
+static int load_runt(sporth_runt_data *rd, 
+    const char *create, 
+    const char *init,
+    const char *compute,
+    const char *destroy,
+    const char *filename) 
+{
+    runt_vm *vm;
+    runt_entry *tmp;
+    runt_int rc;
+    vm = &rd->vm;
+
+    if(runt_load_dictionary(vm, filename) != RUNT_OK ) {
+        return PLUMBER_NOTOK;
+    }
+
+    rc = runt_word_search(vm, create, strlen(create), &tmp);
+    if(rc == RUNT_NOT_OK) {
+        return PLUMBER_NOTOK;
+    }
+
+    rd->create = tmp->cell;
+    
+    rc = runt_word_search(vm, init, strlen(init), &tmp);
+    if(rc == RUNT_NOT_OK) {
+        return PLUMBER_NOTOK;
+    }
+    rd->init = tmp->cell;
+    
+    rc = runt_word_search(vm, compute, strlen(compute), &tmp);
+    if(rc == RUNT_NOT_OK) {
+        return PLUMBER_NOTOK;
+    }
+    rd->compute = tmp->cell;
+    
+    rc = runt_word_search(vm, destroy, strlen(destroy), &tmp);
+    if(rc == RUNT_NOT_OK) {
+        return PLUMBER_NOTOK;
+    }
+    rd->destroy = tmp->cell;
+
+    return PLUMBER_OK;
+}
+
+int runt_plumber_create(plumber_data *pd, 
+    sporth_stack *stack, 
+    void **ud, 
+    runt_int(* loader)(runt_vm *))
+{
+    sporth_runt_data *data;
+    char *create;
+    char *init;
+    char *compute;
+    char *destroy;
+    char *filename;
+
+    data = malloc(sizeof(sporth_runt_data));
+    *ud = data;
+    mk_runt(data);
+
+    filename = sporth_stack_pop_string(stack);
+    destroy = sporth_stack_pop_string(stack);
+    compute = sporth_stack_pop_string(stack);
+    init = sporth_stack_pop_string(stack);
+    create = sporth_stack_pop_string(stack);
+    sporth_stack_pop_float(stack);
+
+    loader(&data->vm);
+
+    if(load_runt(data, create, init, compute, destroy, filename) != PLUMBER_OK) {
+        return PLUMBER_NOTOK;
+    }
+
+    runt_cell_exec(&data->vm, data->create);
+
+    return PLUMBER_OK;
+}
+
+int runt_plumber_init(plumber_data *pd, sporth_stack *stack, 
+    void **ud)
+{
+    sporth_runt_data *data;
+    data = *ud;
+    sporth_stack_pop_string(stack);
+    sporth_stack_pop_string(stack);
+    sporth_stack_pop_string(stack);
+    sporth_stack_pop_string(stack);
+    sporth_stack_pop_string(stack);
+    sporth_stack_pop_float(stack);
+    runt_cell_exec(&data->vm, data->init);
+    return PLUMBER_OK;
+}
+
+int runt_plumber_compute(plumber_data *pd, sporth_stack *stack, void **ud)
+{
+    SPFLOAT in;
+    sporth_runt_data *data;
+
+    in = sporth_stack_pop_float(stack);
+    data = *ud;
+    if(in != 0) {
+        runt_cell_exec(&data->vm, data->compute);
+    }
+    return PLUMBER_OK;
+}
+
+int runt_plumber_destroy(plumber_data *pd, sporth_stack *stack, void **ud)
+{
+    sporth_runt_data *data;
+
+    data = *ud;
+    runt_cell_exec(&data->vm, data->destroy);
+    return PLUMBER_OK;
 }
