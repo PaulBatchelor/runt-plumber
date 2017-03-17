@@ -287,6 +287,42 @@ static runt_int plumb_var(runt_vm *vm, runt_ptr p)
     return RUNT_OK;
 }
 
+static runt_int plumb_sporth_var(runt_vm *vm, runt_ptr p)
+{
+    user_data *ud;
+    plumber_data *pd;
+    const char *varname;
+    SPFLOAT ival;
+    SPFLOAT *var;
+    runt_int rc;
+    runt_stacklet *s;
+
+    ud = (user_data *)runt_to_cptr(p);
+    pd = ud->pd;
+
+    rc = runt_ppop(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+    ival = s->f;
+
+    rc = runt_ppop(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+    varname = runt_to_string(s->p);
+
+    var = malloc(sizeof(SPFLOAT));
+
+    *var = ival;
+    runt_mk_float_cell(vm, varname, strlen(varname), var);
+    plumber_ftmap_add_userdata(pd, varname, var);
+
+    return RUNT_OK;
+}
+
+static runt_int plumber_pd(runt_vm *vm, runt_ptr p)
+{
+    /* no need to do anything here, this is just used for connecting things */
+    return RUNT_OK;
+}
+
 static void plumb_define(runt_vm *vm, 
         runt_ptr p,
         const char *word,
@@ -298,12 +334,13 @@ static void plumb_define(runt_vm *vm,
     runt_word_bind_ptr(vm, word_id, p);
 }
 
-
 runt_int runt_load_plumber(runt_vm *vm)
 {
+    runt_print(vm, "loading plumber...\n");
     user_data *ud;
     runt_malloc(vm, sizeof(user_data), (void **)&ud);
     runt_ptr p = runt_mk_cptr(vm, ud);
+    ud->magic = 123;
 
     plumb_define(vm, p, "plumb_new", 9, plumb);
     plumb_define(vm, p, "plumb_start", 11, plumb_start);
@@ -317,6 +354,8 @@ runt_int runt_load_plumber(runt_vm *vm)
     plumb_define(vm, p, "plumb_parse", 11, plumb_parse);
     plumb_define(vm, p, "plumb_run", 9, plumb_run);
     plumb_define(vm, p, "plumb_var", 9, plumb_var);
+    plumb_define(vm, p, "plumb_sporth_var", 16, plumb_sporth_var);
+    plumb_define(vm, p, "pd", 2, plumber_pd);
     return RUNT_OK;
 }
 
@@ -398,6 +437,8 @@ int runt_plumber_create(plumber_data *pd,
     char *compute;
     char *destroy;
     char *filename;
+    runt_entry *ent;
+    user_data *pud;
 
     data = malloc(sizeof(sporth_runt_data));
     *ud = data;
@@ -416,6 +457,9 @@ int runt_plumber_create(plumber_data *pd,
         return PLUMBER_NOTOK;
     }
 
+    runt_word_search(&data->vm, "pd", 2, &ent);
+    pud = (user_data *)runt_to_cptr(ent->cell->p);
+    pud->pd = pd;
     runt_cell_exec(&data->vm, data->create);
 
     return PLUMBER_OK;
@@ -455,5 +499,8 @@ int runt_plumber_destroy(plumber_data *pd, sporth_stack *stack, void **ud)
 
     data = *ud;
     runt_cell_exec(&data->vm, data->destroy);
+    free(data->cells);
+    free(data->buf);
+    free(data);
     return PLUMBER_OK;
 }
