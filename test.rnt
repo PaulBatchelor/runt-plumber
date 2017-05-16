@@ -1,5 +1,6 @@
 [
-: create "create!" say "var" 440 plumb_sporth_var ;
+: var 440 ;
+: create "create!" say _var "var" plumb_var ;
 : init "init!" say ;
 : compute "compute!" say ;
 : destroy "destroy!" say ;
