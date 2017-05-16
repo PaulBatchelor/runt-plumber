@@ -1,14 +1,17 @@
-LIBS = -lsporth -lsoundpipe -lsndfile -lm -ldl -ljack -lrunt
-CFLAGS = -fPIC -O3 -shared -Wall -ansi -g
+LIBS = -lsporth -lsoundpipe -lsndfile -lm -ldl -ljack -lrunt -lpthread
+CFLAGS = -fPIC -O3 -Wall -ansi -g
 
 OBJ = stream.o plumber.o
 
 NAME = plumber
 
-default: librunt_$(NAME).a ugen.so
+default: librunt_$(NAME).a rntplumber
 
 librunt_$(NAME).a: $(OBJ)
 	$(AR) rcs $@ $(OBJ)
+
+rntplumber: parse.c $(OBJ)
+	$(CC) $(CFLAGS) $< $(OBJ) -o $@ $(LIBS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@

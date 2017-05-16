@@ -196,7 +196,7 @@ static runt_int plumb_eval(runt_vm *vm, runt_ptr p)
     return rc;
 }
 
-static runt_int plumb(runt_vm *vm, runt_ptr p)
+static runt_int plumb_new(runt_vm *vm, runt_ptr p)
 {
 /*
     runt_int rc;
@@ -318,7 +318,7 @@ runt_int runt_load_plumber(runt_vm *vm)
     runt_ptr p = runt_mk_cptr(vm, ud);
     ud->magic = 123;
 
-    plumb_define(vm, p, "plumb_new", 9, plumb);
+    plumb_define(vm, p, "plumb_new", 9, plumb_new);
     plumb_define(vm, p, "plumb_start", 11, plumb_start);
     plumb_define(vm, p, "plumb_stop", 10, plumb_stop);
     plumb_define(vm, p, "plumb_float", 11, plumb_float);
@@ -369,7 +369,7 @@ static int load_runt(sporth_runt_data *rd,
     runt_int rc;
     vm = &rd->vm;
 
-    if(runt_load_dictionary(vm, filename) != RUNT_OK ) {
+    if(runt_parse_file(vm, filename) != RUNT_OK ) {
         return PLUMBER_NOTOK;
     }
 
@@ -407,11 +407,11 @@ int runt_plumber_create(plumber_data *pd,
     runt_int(* loader)(runt_vm *))
 {
     sporth_runt_data *data;
-    char *create;
-    char *init;
-    char *compute;
-    char *destroy;
-    char *filename;
+    const char *create;
+    const char *init;
+    const char *compute;
+    const char *destroy;
+    const char *filename;
     runt_entry *ent;
     user_data *pud;
 
