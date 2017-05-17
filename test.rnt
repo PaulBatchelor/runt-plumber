@@ -1,8 +1,25 @@
 [
-: var 440 ;
-: create "create!" say _var "var" plumb_var ;
-: init "init!" say ;
-: compute "compute!" say ;
-: destroy "destroy!" say ;
+: pd ptr ;
+: stream ptr ;
+: freq 350 ;
+: hello "hello from runt!" say ;
 ]
 
+44100 plumb_new _pd setptr
+pd plumbstream_new _stream setptr 
+
+_hello "hello" stream pd plumb_func
+
+_freq "freq" stream pd plumb_var
+
+440 stream pd plumb_float
+0.2 stream pd plumb_float
+"sine" stream pd plumb_ugen
+
+"_freq get 0.2 sine +" stream pd plumb_parse
+
+"1 metro _hello fe" stream pd plumb_parse
+
+"sine.wav" 5.0 stream pd plumb_write
+stream pd plumbstream_free
+pd plumb_free

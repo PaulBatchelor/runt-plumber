@@ -120,6 +120,19 @@ int plumber_stream_append_data(plumber_data *pd,
     return PLUMBER_OK;
 }
 
+int plumber_stream_append_function(plumber_data *pd, 
+        plumber_stream *stream, const char *name, uint32_t size, 
+        plumber_dyn_func f, void *ud)
+{
+    /* code adopted from plumber_ftmap_add_function() */
+
+    sporth_fload_d *fd = malloc(sizeof(sporth_fload_d));
+    fd->fun = f;
+    fd->ud = ud;
+
+    return plumber_stream_append_data(pd, stream, name, size, (void *)fd);
+}
+
 int plumber_stream_destroy(plumber_data *pd, plumber_stream *stream)
 {
     uint32_t i;

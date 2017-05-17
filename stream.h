@@ -34,6 +34,9 @@ int plumber_stream_append_float(plumber_data *pd,
         plumber_stream *stream, SPFLOAT flt);
 int plumber_stream_append_data(plumber_data *pd, 
         plumber_stream *stream, const char *name, uint32_t size, void *ud);
+int plumber_stream_append_function(plumber_data *pd, 
+        plumber_stream *stream, const char *name, uint32_t size, 
+        plumber_dyn_func f, void *ud);
 
 /* get the function id of a ugen */
 int plumber_str_to_ugen(plumber_data *pd, const char *str, uint32_t *id);

@@ -1,16 +1,19 @@
 [
 : pd ptr ;
 : stream ptr ;
+: freq 350 ;
 ]
 
 44100 plumb_new _pd setptr
 pd plumbstream_new _stream setptr 
 
+_freq "freq" stream pd plumb_var
+
 440 stream pd plumb_float
 0.2 stream pd plumb_float
 "sine" stream pd plumb_ugen
 
-"350 0.2 sine +" stream pd plumb_parse
+"_freq get 0.2 sine +" stream pd plumb_parse
 
 "sine.wav" 5.0 stream pd plumb_write
 

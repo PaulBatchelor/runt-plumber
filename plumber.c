@@ -255,6 +255,8 @@ static runt_int plumb_new(runt_vm *vm, runt_ptr p)
     pd->sp = sp;
     pd->log = vm->fp;
 
+    pd->ud = vm;
+
     return RUNT_OK; 
 }
 
@@ -310,7 +312,6 @@ static runt_int plumb_parse(runt_vm *vm, runt_ptr p)
     return RUNT_OK;
 }
 
-#if 0
 static runt_int plumb_var(runt_vm *vm, runt_ptr p)
 {
     runt_int rc;
@@ -319,12 +320,14 @@ static runt_int plumb_var(runt_vm *vm, runt_ptr p)
     runt_cell *cell;
     SPFLOAT *var;
     runt_uint id;
-    user_data *ud;
     plumber_data *pd;
+    plumber_stream *stream;
 
-    ud = (user_data *)runt_to_cptr(p);
 
-    pd = ud->pd;
+    rc = get_plumber_data(vm, &pd);
+    RUNT_ERROR_CHECK(rc);
+    rc = get_plumber_stream(vm, &stream);
+    RUNT_ERROR_CHECK(rc);
 
     rc = runt_ppop(vm, &s);
     RUNT_ERROR_CHECK(rc);
@@ -339,10 +342,7 @@ static runt_int plumb_var(runt_vm *vm, runt_ptr p)
    
     var = (SPFLOAT *)cell->p.ud;
 
-    runt_print(vm, "Creating sporth variable %s, length %d\n", 
-            varname, strlen(varname));
-
-    plumber_stream_append_data(pd, &ud->stream, varname, strlen(varname), var);
+    plumber_stream_append_data(pd, stream, varname, strlen(varname), var);
 
     plumber_ftmap_delete(pd, 0);
     plumber_ftmap_add_userdata(pd, varname, var);
@@ -350,6 +350,7 @@ static runt_int plumb_var(runt_vm *vm, runt_ptr p)
     return RUNT_OK;
 }
 
+#if 0
 static void plumb_define(runt_vm *vm, 
         runt_ptr p,
         const char *word,
@@ -432,6 +433,59 @@ static runt_int plumb_write(runt_vm *vm, runt_ptr p)
     return RUNT_OK;
 }
 
+static int sporth_tick(plumber_data *pd, sporth_stack *stack, void **ud)
+{
+    runt_vm *vm;
+    runt_cell *cell;
+    SPFLOAT in;
+
+    if(pd->mode != PLUMBER_DESTROY) {
+        in = sporth_stack_pop_float(stack);
+    }
+
+    if(pd->mode == PLUMBER_COMPUTE) {
+        if(in != 0) {
+            vm = pd->ud;
+            cell = *ud;
+            runt_cell_exec(vm, cell);
+        }
+    }
+    return PLUMBER_OK;
+}
+
+static runt_int plumb_func(runt_vm *vm, runt_ptr p)
+{
+    runt_int rc;
+    const char *fname;
+    runt_int id;
+    plumber_data *pd;
+    plumber_stream *stream;
+    runt_stacklet *s;
+    runt_cell *cell;
+
+    rc = get_plumber_data(vm, &pd);
+    RUNT_ERROR_CHECK(rc);
+    rc = get_plumber_stream(vm, &stream);
+    RUNT_ERROR_CHECK(rc);
+
+    rc = runt_ppop(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+    fname = runt_to_string(s->p);
+    
+    rc = runt_ppop(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+    id = s->f;
+
+    runt_cell_id_get(vm, id, &cell);
+
+    printf("appending function %s\n", fname);
+    plumber_stream_append_function(pd, stream, 
+            fname, strlen(fname), 
+            sporth_tick, cell);
+
+    return RUNT_NOT_OK;
+}
+
 runt_int runt_load_plumber(runt_vm *vm)
 {
     /* runt_print(vm, "loading plumber...\n"); */
@@ -449,10 +503,11 @@ runt_int runt_load_plumber(runt_vm *vm)
     runt_word_define(vm, "plumb_float", 11, plumb_float);
     runt_word_define(vm, "plumb_string", 12, plumb_string);
     runt_word_define(vm, "plumb_ugen", 10, plumb_ugen);
-    
     runt_word_define(vm, "plumb_write", 11, plumb_write);
-    
     runt_word_define(vm, "plumb_parse", 11, plumb_parse);
+    runt_word_define(vm, "plumb_var", 9, plumb_var);
+    runt_word_define(vm, "plumb_func", 10, plumb_func);
+
     /*
     plumb_define(vm, p, "plumb_new", 9, plumb_new);
     plumb_define(vm, p, "plumb_parse", 11, plumb_parse);
@@ -471,152 +526,4 @@ runt_int runt_load_plumber(runt_vm *vm)
     return RUNT_OK;
 }
 
-#if 0
-
-typedef struct {
-    runt_vm vm;
-    unsigned char *buf;
-    runt_cell *cells;
-    runt_cell *create;
-    runt_cell *init;
-    runt_cell *compute;
-    runt_cell *destroy;
-} sporth_runt_data;
-
-static void mk_runt(sporth_runt_data *rd)
-{
-    
-    rd->buf = malloc(RUNT_MEGABYTE * 2);
-    rd->cells = malloc(sizeof(runt_cell) * 1024);
-
-    runt_cell_pool_set(&rd->vm, rd->cells, 1024);
-    runt_cell_pool_init(&rd->vm);
-
-    runt_memory_pool_set(&rd->vm, rd->buf, RUNT_MEGABYTE * 2);
-    runt_init(&rd->vm);
-}
-
-static int load_runt(sporth_runt_data *rd, 
-    const char *create, 
-    const char *init,
-    const char *compute,
-    const char *destroy,
-    const char *filename) 
-{
-    runt_vm *vm;
-    runt_entry *tmp;
-    runt_int rc;
-    vm = &rd->vm;
-
-    if(runt_parse_file(vm, filename) != RUNT_OK ) {
-        return PLUMBER_NOTOK;
-    }
-
-    rc = runt_word_search(vm, create, strlen(create), &tmp);
-    if(rc == RUNT_NOT_OK) {
-        return PLUMBER_NOTOK;
-    }
-
-    rd->create = tmp->cell;
-    
-    rc = runt_word_search(vm, init, strlen(init), &tmp);
-    if(rc == RUNT_NOT_OK) {
-        return PLUMBER_NOTOK;
-    }
-    rd->init = tmp->cell;
-    
-    rc = runt_word_search(vm, compute, strlen(compute), &tmp);
-    if(rc == RUNT_NOT_OK) {
-        return PLUMBER_NOTOK;
-    }
-    rd->compute = tmp->cell;
-    
-    rc = runt_word_search(vm, destroy, strlen(destroy), &tmp);
-    if(rc == RUNT_NOT_OK) {
-        return PLUMBER_NOTOK;
-    }
-    rd->destroy = tmp->cell;
-
-    return PLUMBER_OK;
-}
-
-int runt_plumber_create(plumber_data *pd, 
-    sporth_stack *stack, 
-    void **ud, 
-    runt_int(* loader)(runt_vm *))
-{
-    sporth_runt_data *data;
-    const char *create;
-    const char *init;
-    const char *compute;
-    const char *destroy;
-    const char *filename;
-    runt_entry *ent;
-    user_data *pud;
-
-    data = malloc(sizeof(sporth_runt_data));
-    *ud = data;
-    mk_runt(data);
-
-    filename = sporth_stack_pop_string(stack);
-    destroy = sporth_stack_pop_string(stack);
-    compute = sporth_stack_pop_string(stack);
-    init = sporth_stack_pop_string(stack);
-    create = sporth_stack_pop_string(stack);
-    sporth_stack_pop_float(stack);
-
-    loader(&data->vm);
-    runt_word_search(&data->vm, "pd", 2, &ent);
-    pud = (user_data *)runt_to_cptr(ent->cell->p);
-    pud->pd = pd;
-
-    if(load_runt(data, create, init, compute, destroy, filename) != PLUMBER_OK) {
-        return PLUMBER_NOTOK;
-    }
-
-    runt_cell_exec(&data->vm, data->create);
-
-    return PLUMBER_OK;
-}
-
-int runt_plumber_init(plumber_data *pd, sporth_stack *stack, 
-    void **ud)
-{
-    sporth_runt_data *data;
-    data = *ud;
-    sporth_stack_pop_string(stack);
-    sporth_stack_pop_string(stack);
-    sporth_stack_pop_string(stack);
-    sporth_stack_pop_string(stack);
-    sporth_stack_pop_string(stack);
-    sporth_stack_pop_float(stack);
-    runt_cell_exec(&data->vm, data->init);
-    return PLUMBER_OK;
-}
-
-int runt_plumber_compute(plumber_data *pd, sporth_stack *stack, void **ud)
-{
-    SPFLOAT in;
-    sporth_runt_data *data;
-
-    in = sporth_stack_pop_float(stack);
-    data = *ud;
-    if(in != 0) {
-        runt_cell_exec(&data->vm, data->compute);
-    }
-    return PLUMBER_OK;
-}
-
-int runt_plumber_destroy(plumber_data *pd, sporth_stack *stack, void **ud)
-{
-    sporth_runt_data *data;
-
-    data = *ud;
-    runt_cell_exec(&data->vm, data->destroy);
-    free(data->cells);
-    free(data->buf);
-    free(data);
-    return PLUMBER_OK;
-}
-#endif
 
