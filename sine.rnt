@@ -1,0 +1,18 @@
+[
+: pd ptr ;
+: stream ptr ;
+]
+
+44100 plumb_new _pd setptr
+pd plumbstream_new _stream setptr 
+
+440 stream pd plumb_float
+0.2 stream pd plumb_float
+"sine" stream pd plumb_ugen
+
+"350 0.2 sine +" stream pd plumb_parse
+
+"sine.wav" 5.0 stream pd plumb_write
+
+stream pd plumbstream_free
+pd plumb_free
