@@ -2,7 +2,8 @@
 : pd ptr ;
 : stream ptr ;
 : freq 350 ;
-: hello "hello from runt!" say ;
+: foo 0 ;
+: hello "hello from runt!" say foo p ;
 ]
 
 44100 plumb_new _pd setptr
@@ -19,6 +20,12 @@ _freq "freq" stream pd plumb_var
 "_freq get 0.2 sine +" stream pd plumb_parse
 
 "1 metro _hello fe" stream pd plumb_parse
+
+# create shared variable "foo" 
+_foo "foo" stream pd plumb_var
+
+# set variable "foo" from inside of Sporth
+"1.0 noise _foo set" stream pd plumb_parse
 
 "sine.wav" 5.0 stream pd plumb_write
 stream pd plumbstream_free
