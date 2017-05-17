@@ -342,7 +342,7 @@ static runt_int plumb_var(runt_vm *vm, runt_ptr p)
    
     var = (SPFLOAT *)cell->p.ud;
 
-    plumber_stream_append_data(pd, stream, varname, strlen(varname), var);
+    plumber_stream_append_data(pd, stream, varname, strlen(varname), var, 0);
 
     plumber_ftmap_delete(pd, 0);
     plumber_ftmap_add_userdata(pd, varname, var);

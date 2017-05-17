@@ -18,6 +18,7 @@ int plumber_word_init(plumber_data *pd, plumber_word *word)
     word->next = NULL;
     word->flt = 0.0;
     word->str = NULL;
+    word->deletable = 0;
     return PLUMBER_OK;
 }
 
@@ -106,7 +107,11 @@ int plumber_stream_append_ugen(plumber_data *pd,
 }
 
 int plumber_stream_append_data(plumber_data *pd, 
-        plumber_stream *stream, const char *name, uint32_t size, void *ud)
+        plumber_stream *stream, 
+        const char *name, 
+        uint32_t size, 
+        void *ud, 
+        char deletable)
 {
     plumber_word *word;
     plumber_word_alloc(pd, &word);
@@ -114,6 +119,7 @@ int plumber_stream_append_data(plumber_data *pd,
     word->type = PLUMBER_STREAM_DATA;
     word->ud = ud;
     word->str = malloc(size + 1);
+    word->deletable = deletable;
     memset(word->str, 0, size + 1);
     strncpy(word->str, name, size);
     plumber_stream_append(pd, stream, word);
@@ -130,7 +136,7 @@ int plumber_stream_append_function(plumber_data *pd,
     fd->fun = f;
     fd->ud = ud;
 
-    return plumber_stream_append_data(pd, stream, name, size, (void *)fd);
+    return plumber_stream_append_data(pd, stream, name, size, (void *)fd, 1);
 }
 
 int plumber_stream_destroy(plumber_data *pd, plumber_stream *stream)
@@ -160,7 +166,6 @@ int plumbing_parse_stream(plumber_data *pd,
     for(i = 0; i < stream->size; i++) {
         switch(entry->type) {
             case SPORTH_FLOAT:
-                plumber_print(pd, "pushing value %g\n", entry->flt);
                 plumber_add_float(pd, pipes, entry->flt);
                 sporth_stack_push_float(&sporth->stack, entry->flt);
                 break;
@@ -169,13 +174,11 @@ int plumbing_parse_stream(plumber_data *pd,
                 sporth_stack_push_string(&sporth->stack, &tmp);
                 break;
             case PLUMBER_STREAM_DATA:
-                plumber_ftmap_delete(pd, 0);
-                plumber_print(pd, "adding userdata %s\n", entry->str);
+                plumber_ftmap_delete(pd, entry->deletable);
                 plumber_ftmap_add_userdata(pd, entry->str, entry->ud);
                 plumber_ftmap_delete(pd, 1);
                 break;
             default:
-                plumber_print(pd, "running ugen #%03d\n", entry->type);
                 f = &sporth->flist[entry->type - SPORTH_FOFFSET];
                 rc = f->func(&sporth->stack, f->ud);
                 if(rc == PLUMBER_NOTOK) {

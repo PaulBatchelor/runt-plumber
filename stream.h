@@ -6,6 +6,8 @@ typedef struct plumber_word {
     char *str;
     void *ud;
     struct plumber_word *next;
+    /* only needed for ftable data */
+    char deletable;
 } plumber_word;
 
 typedef struct {
@@ -33,7 +35,11 @@ int plumber_stream_append_ugen(plumber_data *pd,
 int plumber_stream_append_float(plumber_data *pd, 
         plumber_stream *stream, SPFLOAT flt);
 int plumber_stream_append_data(plumber_data *pd, 
-        plumber_stream *stream, const char *name, uint32_t size, void *ud);
+        plumber_stream *stream, 
+        const char *name, 
+        uint32_t size, 
+        void *ud,
+        char deletable);
 int plumber_stream_append_function(plumber_data *pd, 
         plumber_stream *stream, const char *name, uint32_t size, 
         plumber_dyn_func f, void *ud);
