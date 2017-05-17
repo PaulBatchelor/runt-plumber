@@ -306,7 +306,6 @@ static runt_int plumb_parse(runt_vm *vm, runt_ptr p)
     RUNT_ERROR_CHECK(rc);
     str = runt_to_string(s->p);
  
-    runt_print(vm, "parsing code '%s'\n", str);
     plumber_stream_parse_string(pd, stream, str);
 
     return RUNT_OK;
@@ -478,12 +477,11 @@ static runt_int plumb_func(runt_vm *vm, runt_ptr p)
 
     runt_cell_id_get(vm, id, &cell);
 
-    printf("appending function %s\n", fname);
     plumber_stream_append_function(pd, stream, 
             fname, strlen(fname), 
             sporth_tick, cell);
 
-    return RUNT_NOT_OK;
+    return RUNT_OK;
 }
 
 runt_int runt_load_plumber(runt_vm *vm)

@@ -44,9 +44,6 @@ int plumber_stream_append(plumber_data *pd,
     stream->last->next = word;
     stream->last = word;
     stream->size++;
-    if(stream->size == 7) { 
-        plumber_print(pd, "stream is now %d\n", stream->size);
-    }
     return PLUMBER_OK;
 }
 
@@ -82,7 +79,6 @@ int plumber_str_to_ugen(plumber_data *pd, const char *key, uint32_t *id)
 
         return PLUMBER_NOTOK;
     } 
-    plumber_print(pd, "the id of ugen %s is %d\n", key, *id);
     return PLUMBER_OK;
 }
 
@@ -223,7 +219,6 @@ static int cheap_string_append(plumber_data *pd, plumber_stream *stream,
 static int cheap_ugen_append(plumber_data *pd, plumber_stream *stream, 
     char *str) {
     const char *ugen = str;
-    plumber_print(pd, "appending ugen %s\n", ugen);
     return plumber_stream_append_ugen(pd, stream, ugen);
 }
 int plumber_stream_parse_string(plumber_data *pd, 
