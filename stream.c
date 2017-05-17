@@ -43,6 +43,9 @@ int plumber_stream_append(plumber_data *pd,
     stream->last->next = word;
     stream->last = word;
     stream->size++;
+    if(stream->size == 7) { 
+        plumber_print(pd, "stream is now %d\n", stream->size);
+    }
     return PLUMBER_OK;
 }
 
@@ -75,8 +78,10 @@ int plumber_stream_append_string(plumber_data *pd,
 int plumber_str_to_ugen(plumber_data *pd, const char *key, uint32_t *id)
 {
     if(sporth_search(&pd->sporth.dict, key, id) != SPORTH_OK) {
+
         return PLUMBER_NOTOK;
     } 
+    plumber_print(pd, "the id of ugen %s is %d\n", key, *id);
     return PLUMBER_OK;
 }
 
@@ -94,7 +99,8 @@ int plumber_stream_append_ugen(plumber_data *pd,
 
     plumber_word_alloc(pd, &word);
     plumber_word_init(pd, word);
-    word->type = id;
+    /* offset is needed because otherwise '+' conflicts with 'string' */
+    word->type = id + SPORTH_FOFFSET;
     plumber_stream_append(pd, stream, word);
     return PLUMBER_OK;
 }
@@ -141,6 +147,7 @@ int plumbing_parse_stream(plumber_data *pd,
     for(i = 0; i < stream->size; i++) {
         switch(entry->type) {
             case SPORTH_FLOAT:
+                plumber_print(pd, "pushing value %g\n", entry->flt);
                 plumber_add_float(pd, pipes, entry->flt);
                 sporth_stack_push_float(&sporth->stack, entry->flt);
                 break;
@@ -155,7 +162,8 @@ int plumbing_parse_stream(plumber_data *pd,
                 plumber_ftmap_delete(pd, 1);
                 break;
             default:
-                f = &sporth->flist[entry->type];
+                plumber_print(pd, "running ugen #%03d\n", entry->type);
+                f = &sporth->flist[entry->type - SPORTH_FOFFSET];
                 rc = f->func(&sporth->stack, f->ud);
                 if(rc == PLUMBER_NOTOK) {
                     return PLUMBER_NOTOK;
@@ -199,6 +207,7 @@ static int cheap_string_append(plumber_data *pd, plumber_stream *stream,
 static int cheap_ugen_append(plumber_data *pd, plumber_stream *stream, 
     char *str) {
     const char *ugen = str;
+    plumber_print(pd, "appending ugen %s\n", ugen);
     return plumber_stream_append_ugen(pd, stream, ugen);
 }
 int plumber_stream_parse_string(plumber_data *pd, 
