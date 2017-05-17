@@ -19,11 +19,14 @@ rntplumber: parse.c $(OBJ)
 ugen.so: ugen.c $(OBJ)
 	$(CC) $(CFLAGS) -fPIC -shared ugen.c $(OBJ) -o $@ $(LIBS) 
 
-install: librunt_$(NAME).a
+install: librunt_$(NAME).a rntplumber
 	mkdir -p ~/.runt/lib
+	mkdir -p ~/.runt/bin
 	mkdir -p ~/.runt/include
 	cp librunt_$(NAME).a ~/.runt/lib
 	cp runt_plumber.h ~/.runt/include
+	cp rntplumber ~/.runt/bin
 
 clean: 
-	rm -rf librunt_$(NAME).a $(OBJ) ugen.so
+	rm -rf librunt_$(NAME).a $(OBJ) 
+	rm -rf rntplumber 
