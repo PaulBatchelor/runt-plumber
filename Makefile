@@ -1,6 +1,10 @@
 LIBS = -lsporth -lsoundpipe -lsndfile -lm -ldl -ljack -lrunt -lpthread
 CFLAGS = -fPIC -O3 -Wall -ansi -g
 
+# Local Runt
+LIBS += -L$(HOME)/.runt/lib
+CFLAGS += -I$(HOME)/.runt/include
+
 OBJ = stream.o plumber.o
 
 NAME = plumber
