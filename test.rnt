@@ -27,6 +27,8 @@ _foo "foo" stream pd plumb_var
 # set variable "foo" from inside of Sporth
 "1.0 noise _foo set" stream pd plumb_parse
 
+stream pd plumb_compile
+
 "sine.wav" 5.0 stream pd plumb_write
 stream pd plumbstream_free
 pd plumb_free

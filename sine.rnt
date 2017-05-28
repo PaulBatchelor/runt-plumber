@@ -15,7 +15,10 @@ _freq "freq" stream pd plumb_var
 
 "_freq get 0.2 sine +" stream pd plumb_parse
 
+stream pd plumb_compile
+
 "sine.wav" 5.0 stream pd plumb_write
+
 
 stream pd plumbstream_free
 pd plumb_free

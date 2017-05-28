@@ -426,7 +426,7 @@ static runt_int plumb_write(runt_vm *vm, runt_ptr p)
     pd->sp->len = pd->sp->sr * dur;
     ud.pd = pd;
     ud.stream = stream;
-    pd->recompile = 1;
+    pd->recompile = 0; 
     sp_process(pd->sp, &ud, process);
 
     return RUNT_OK;
@@ -484,16 +484,49 @@ static runt_int plumb_func(runt_vm *vm, runt_ptr p)
     return RUNT_OK;
 }
 
+static runt_int plumb_udata(runt_vm *vm, runt_ptr p)
+{
+    runt_int rc;
+    runt_stacklet *s;
+    const char *str;
+    plumber_data *pd;
+    void *ud;
+
+    rc = get_plumber_data(vm, &pd);
+    RUNT_ERROR_CHECK(rc);
+
+    rc = runt_ppop(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+    str = runt_to_string(s->p);
+
+    if(plumber_ftmap_search_userdata(pd, str, &ud) == PLUMBER_NOTOK) {
+        runt_print(vm, "plumb_udata: could not find table '%s'\n", str);
+        return RUNT_NOT_OK;
+    }
+
+    rc = runt_ppush(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+    s->p = runt_mk_cptr(vm, ud);
+    return RUNT_OK;
+}
+
+static runt_int plumb_compile(runt_vm *vm, runt_ptr p)
+{
+    runt_int rc;
+    plumber_data *pd;
+    plumber_stream *stream;
+    
+    rc = get_plumber_data(vm, &pd);
+    RUNT_ERROR_CHECK(rc);
+    rc = get_plumber_stream(vm, &stream);
+    RUNT_ERROR_CHECK(rc);
+
+    plumber_recompile_stream(pd, stream);
+    return RUNT_OK;
+}
+
 runt_int runt_load_plumber(runt_vm *vm)
 {
-    /* runt_print(vm, "loading plumber...\n"); */
-    /* user_data *ud; */
-    /* runt_malloc(vm, sizeof(user_data), (void **)&ud); */
-    /* runt_ptr p = runt_mk_cptr(vm, ud); */
-    /* ud->magic = 123;
-    ud->pd = &ud->ipd; */
-
-
     runt_word_define(vm, "plumb_new", 9, plumb_new);
     runt_word_define(vm, "plumb_free", 10, plumb_free);
     runt_word_define(vm, "plumbstream_new", 15, plumbstream_new);
@@ -505,22 +538,8 @@ runt_int runt_load_plumber(runt_vm *vm)
     runt_word_define(vm, "plumb_parse", 11, plumb_parse);
     runt_word_define(vm, "plumb_var", 9, plumb_var);
     runt_word_define(vm, "plumb_func", 10, plumb_func);
-
-    /*
-    plumb_define(vm, p, "plumb_new", 9, plumb_new);
-    plumb_define(vm, p, "plumb_parse", 11, plumb_parse);
-    plumb_define(vm, p, "plumb_start", 11, plumb_start);
-    plumb_define(vm, p, "plumb_stop", 10, plumb_stop);
-    plumb_define(vm, p, "plumb_float", 11, plumb_float);
-    plumb_define(vm, p, "plumb_string", 12, plumb_string);
-    plumb_define(vm, p, "plumb_ugen", 10, plumb_ugen);
-    plumb_define(vm, p, "plumb_print", 11, plumb_print);
-    plumb_define(vm, p, "plumb_clear", 11, plumb_clear);
-    plumb_define(vm, p, "plumb_eval", 10, plumb_eval);
-    plumb_define(vm, p, "plumb_parse", 11, plumb_parse);
-    plumb_define(vm, p, "plumb_run", 9, plumb_run);
-    plumb_define(vm, p, "plumb_var", 9, plumb_var);
-    */
+    runt_word_define(vm, "plumb_udata", 11, plumb_udata);
+    runt_word_define(vm, "plumb_compile", 13, plumb_compile);
     return RUNT_OK;
 }
 
