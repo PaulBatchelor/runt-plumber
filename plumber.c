@@ -36,23 +36,6 @@ static runt_int get_plumber_stream(runt_vm *vm, plumber_stream **stream)
     return rc;
 }
 
-static runt_int plumb_data(runt_vm *vm, user_data **ud)
-{
-    runt_int rc = RUNT_NOT_OK;
-    runt_stacklet *s;
-    runt_uint addr;
-    user_data *udp;
-
-    rc = runt_ppop(vm, &s);
-    RUNT_ERROR_CHECK(rc);
-    addr = s->f;
-
-    rc = runt_memory_pool_get(vm, addr, (void **)&udp);
-    RUNT_ERROR_CHECK(rc);
-    *ud = udp;
-    return rc;
-}
-
 static void process(sp_data *sp, void *udata){
     user_data *ud = udata;
     plumber_data *pd = ud->pd;
@@ -132,16 +115,19 @@ static runt_int plumb_string(runt_vm *vm, runt_ptr p)
 {
     runt_int rc;
     runt_stacklet *s;
-    user_data *ud;
+    plumber_data *pd;
+    plumber_stream *stream;
     const char *str;
 
-    rc = plumb_data(vm, &ud);
+    rc = get_plumber_data(vm, &pd);
+    RUNT_ERROR_CHECK(rc);
+    rc = get_plumber_stream(vm, &stream);
     RUNT_ERROR_CHECK(rc);
 
     rc = runt_ppop(vm, &s);
     RUNT_ERROR_CHECK(rc);
     str = runt_to_string(s->p);
-    plumber_stream_append_string(ud->pd, ud->stream, str, strlen(str));
+    plumber_stream_append_string(pd, stream, str, strlen(str));
     return RUNT_OK;
 }
 
