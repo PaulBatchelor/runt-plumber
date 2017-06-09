@@ -511,6 +511,87 @@ static runt_int plumb_compile(runt_vm *vm, runt_ptr p)
     return RUNT_OK;
 }
 
+static runt_int plumb_ftbl(runt_vm *vm, runt_ptr p)
+{
+    runt_int rc;
+    runt_stacklet *s;
+    const char *ftname;
+    sp_ftbl *ft;
+    plumber_data *pd;
+    
+    rc = get_plumber_data(vm, &pd);
+    RUNT_ERROR_CHECK(rc);
+
+    rc = runt_ppop(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+    ftname = runt_to_string(s->p);
+
+    rc = plumber_ftmap_search(pd, ftname, &ft);
+    if(rc != PLUMBER_OK) {
+        runt_print(vm, "Could not find ftable %s\n", ftname);
+        return RUNT_NOT_OK;
+    }
+
+    rc = runt_ppush(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+    s->p = runt_mk_cptr(vm, ft);
+
+    return RUNT_OK;
+}
+
+static runt_int plumb_ftmap(runt_vm *vm, runt_ptr p)
+{
+    runt_int rc;
+    runt_stacklet *s1;
+    runt_stacklet *s2;
+    runt_uint id;
+    sp_ftbl *ft;
+    runt_uint i;
+    
+    rc = runt_ppop(vm, &s1);
+    RUNT_ERROR_CHECK(rc);
+    ft = runt_to_cptr(s1->p);
+    
+    rc = runt_ppop(vm, &s1);
+    RUNT_ERROR_CHECK(rc);
+    id = s1->f;
+
+    for(i = 0; i < ft->size; i++) {
+        rc = runt_ppush(vm, &s1);
+        RUNT_ERROR_CHECK(rc);
+        rc = runt_ppush(vm, &s2);
+        RUNT_ERROR_CHECK(rc);
+
+        s1->f = i;
+        s2->f = ft->tbl[i];
+        runt_cell_id_exec(vm, id);
+
+        rc = runt_ppop(vm, &s1);
+        RUNT_ERROR_CHECK(rc);
+        ft->tbl[i] = s1->f;
+    }
+    return RUNT_OK;
+}
+
+static runt_int plumb_ftsize(runt_vm *vm, runt_ptr p)
+{
+    runt_int rc;
+    runt_stacklet *s;
+    runt_uint size;
+    sp_ftbl *ft;
+    
+    rc = runt_ppop(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+    ft = runt_to_cptr(s->p);
+   
+    size = ft->size;
+
+    rc = runt_ppush(vm, &s);
+    RUNT_ERROR_CHECK(rc);
+    s->f = size;
+    return RUNT_OK;
+}
+
 runt_int runt_load_plumber(runt_vm *vm)
 {
     runt_word_define(vm, "plumb_new", 9, plumb_new);
@@ -526,6 +607,9 @@ runt_int runt_load_plumber(runt_vm *vm)
     runt_word_define(vm, "plumb_func", 10, plumb_func);
     runt_word_define(vm, "plumb_udata", 11, plumb_udata);
     runt_word_define(vm, "plumb_compile", 13, plumb_compile);
+    runt_word_define(vm, "plumb_ftbl", 10, plumb_ftbl);
+    runt_word_define(vm, "plumb_ftmap", 11, plumb_ftmap);
+    runt_word_define(vm, "plumb_ftsize", 12, plumb_ftsize);
     return RUNT_OK;
 }
 
