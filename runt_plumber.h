@@ -12,4 +12,6 @@ int runt_plumber_init(plumber_data *pd,
 int runt_plumber_compute(plumber_data *pd, sporth_stack *stack, void **ud);
 
 int runt_plumber_destroy(plumber_data *pd, sporth_stack *stack, void **ud);
+
+int runt_load_plumber(runt_vm *vm);
 #endif

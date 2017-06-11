@@ -9,7 +9,7 @@ OBJ = stream.o plumber.o
 
 NAME = plumber
 
-default: librunt_$(NAME).a rntplumber
+default: librunt_$(NAME).a rntplumber $(NAME).so
 
 librunt_$(NAME).a: $(OBJ)
 	$(AR) rcs $@ $(OBJ)
@@ -20,17 +20,20 @@ rntplumber: parse.c $(OBJ)
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-ugen.so: ugen.c $(OBJ)
-	$(CC) $(CFLAGS) -fPIC -shared ugen.c $(OBJ) -o $@ $(LIBS) 
+plumber.so: plugin.o $(OBJ)
+	$(LD) -shared $(OBJ) plugin.o -o $@ $(LIBS)
 
 install: librunt_$(NAME).a rntplumber
 	mkdir -p ~/.runt/lib
 	mkdir -p ~/.runt/bin
 	mkdir -p ~/.runt/include
+	mkdir -p ~/.runt/plugins
 	cp librunt_$(NAME).a ~/.runt/lib
 	cp runt_plumber.h ~/.runt/include
-	cp rntplumber ~/.runt/bin
+	cp rnt$(NAME) ~/.runt/bin
+	cp $(NAME).so ~/.runt/plugins
 
 clean: 
 	rm -rf librunt_$(NAME).a $(OBJ) 
-	rm -rf rntplumber 
+	rm -rf rnt$(NAME)
+	rm -rf plugin.o $(NAME).so

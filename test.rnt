@@ -1,3 +1,5 @@
+# runt-plumber can alternatively be used as a dynamic plugin
+# "./plumber.so" dynload
 [
 : pd ptr ;
 : stream ptr ;

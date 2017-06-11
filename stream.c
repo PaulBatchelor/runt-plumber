@@ -221,6 +221,7 @@ static int cheap_ugen_append(plumber_data *pd, plumber_stream *stream,
     const char *ugen = str;
     return plumber_stream_append_ugen(pd, stream, ugen);
 }
+
 int plumber_stream_parse_string(plumber_data *pd, 
         plumber_stream *stream, const char *str)
 {
