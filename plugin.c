@@ -7,6 +7,5 @@
 
 void runt_plugin_init(runt_vm *vm)
 {
-    runt_print(vm, "loading plugin...\n");
     runt_load_plumber(vm);
 }

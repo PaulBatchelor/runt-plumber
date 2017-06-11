@@ -61,3 +61,6 @@ int plumber_reparse_stream(plumber_data *pd, plumber_stream *stream);
 
 /* call this when you want to recompile */
 int plumber_recompile_stream(plumber_data *pd, plumber_stream *str);
+
+/* appends stream directly to plumbing pipes. */
+int plumber_stream_append_to_main(plumber_data *pd, plumber_stream *stream);

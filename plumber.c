@@ -592,6 +592,22 @@ static runt_int plumb_ftsize(runt_vm *vm, runt_ptr p)
     return RUNT_OK;
 }
 
+static runt_int plumb_append(runt_vm *vm, runt_ptr p)
+{
+    runt_int rc;
+    plumber_data *pd;
+    plumber_stream *stream;
+
+    rc = get_plumber_data(vm, &pd);
+    RUNT_ERROR_CHECK(rc);
+    rc = get_plumber_stream(vm, &stream);
+    RUNT_ERROR_CHECK(rc);
+
+    plumber_stream_append_to_main(pd, stream);
+
+    return RUNT_OK;
+}
+
 runt_int runt_load_plumber(runt_vm *vm)
 {
     runt_word_define(vm, "plumb_new", 9, plumb_new);
@@ -610,6 +626,7 @@ runt_int runt_load_plumber(runt_vm *vm)
     runt_word_define(vm, "plumb_ftbl", 10, plumb_ftbl);
     runt_word_define(vm, "plumb_ftmap", 11, plumb_ftmap);
     runt_word_define(vm, "plumb_ftsize", 12, plumb_ftsize);
+    runt_word_define(vm, "plumb_append", 12, plumb_append);
     return RUNT_OK;
 }
 

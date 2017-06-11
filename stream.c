@@ -261,3 +261,11 @@ int plumber_stream_parse_string(plumber_data *pd,
     }
     return PLUMBER_OK;
 }
+
+/* appends stream directly to plumbing pipes. */
+int plumber_stream_append_to_main(plumber_data *pd, plumber_stream *stream)
+{
+    plumbing *pipes;
+    pipes = plumber_get_pipes(pd);
+    return plumbing_parse_stream(pd, pipes, stream);
+}
