@@ -107,7 +107,8 @@ int plumber_stream_append_data(plumber_data *pd,
         const char *name, 
         uint32_t size, 
         void *ud, 
-        char deletable)
+        char deletable,
+        char type)
 {
     plumber_word *word;
     plumber_word_alloc(pd, &word);
@@ -116,6 +117,7 @@ int plumber_stream_append_data(plumber_data *pd,
     word->ud = ud;
     word->str = malloc(size + 1);
     word->deletable = deletable;
+    word->fttype = type;
     memset(word->str, 0, size + 1);
     strncpy(word->str, name, size);
     plumber_stream_append(pd, stream, word);
@@ -132,7 +134,8 @@ int plumber_stream_append_function(plumber_data *pd,
     fd->fun = f;
     fd->ud = ud;
 
-    return plumber_stream_append_data(pd, stream, name, size, (void *)fd, 1);
+    return plumber_stream_append_data(pd, 
+            stream, name, size, (void *)fd, 1, PTYPE_USERDATA);
 }
 
 int plumber_stream_destroy(plumber_data *pd, plumber_stream *stream)
@@ -158,6 +161,7 @@ int plumbing_parse_stream(plumber_data *pd,
     int rc;
     sporth_func *f;
     pd->mode = PLUMBER_CREATE;
+    plumber_ftbl *ft;
     char *tmp;
     for(i = 0; i < stream->size; i++) {
         switch(entry->type) {
@@ -171,7 +175,9 @@ int plumbing_parse_stream(plumber_data *pd,
                 break;
             case PLUMBER_STREAM_DATA:
                 plumber_ftmap_delete(pd, entry->deletable);
-                plumber_ftmap_add_userdata(pd, entry->str, entry->ud);
+                plumber_add(pd, entry->str, &ft);
+                ft->ud = entry->ud;
+                ft->type = entry->fttype;
                 plumber_ftmap_delete(pd, 1);
                 break;
             default:

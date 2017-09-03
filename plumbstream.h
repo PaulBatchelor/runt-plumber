@@ -8,6 +8,7 @@ typedef struct plumber_word {
     struct plumber_word *next;
     /* only needed for ftable data */
     char deletable;
+    char fttype;
 } plumber_word;
 
 typedef struct {
@@ -39,7 +40,8 @@ int plumber_stream_append_data(plumber_data *pd,
         const char *name, 
         uint32_t size, 
         void *ud,
-        char deletable);
+        char deletable,
+        char type);
 int plumber_stream_append_function(plumber_data *pd, 
         plumber_stream *stream, const char *name, uint32_t size, 
         plumber_dyn_func f, void *ud);
