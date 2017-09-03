@@ -30,6 +30,7 @@ install: librunt_$(NAME).a rntplumber
 	mkdir -p ~/.runt/plugins
 	cp librunt_$(NAME).a ~/.runt/lib
 	cp runt_plumber.h ~/.runt/include
+	cp plumbstream.h ~/.runt/include
 	cp rnt$(NAME) ~/.runt/bin
 	cp $(NAME).so ~/.runt/plugins
 

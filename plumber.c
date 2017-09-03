@@ -7,7 +7,7 @@
 #include <jack/jack.h>
 #include <stdlib.h>
 
-#include "stream.h"
+#include "plumbstream.h"
 #include "data.h"
 #include "runt_plumber.h"
 
@@ -52,7 +52,7 @@ static void process(sp_data *sp, void *udata){
     
     plumber_compute(pd, PLUMBER_COMPUTE);
 
-    for (chan = 0; chan < pd->nchan; chan++) {
+    for (chan = 0; chan < pd->sp->nchan; chan++) {
         out = sporth_stack_pop_float(&pd->sporth.stack);
         sp->out[chan] = out;
     }

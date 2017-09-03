@@ -2,7 +2,7 @@
 #include <sporth.h>
 #include <stdlib.h>
 #include <string.h>
-#include "stream.h"
+#include "plumbstream.h"
 
 int plumber_word_alloc(plumber_data *pd, plumber_word **word)
 {
