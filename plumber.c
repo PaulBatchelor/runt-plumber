@@ -254,6 +254,9 @@ static runt_int plumb_free(runt_vm *vm, runt_ptr p)
     rc = get_plumber_data(vm, &pd);
     RUNT_ERROR_CHECK(rc);
 
+    if(pd->showprog) {
+        sp_progress_destroy(&pd->prog);
+    }
     plumber_clean(pd);
     sp_destroy(&pd->sp);
     free(pd);
@@ -327,7 +330,8 @@ static runt_int plumb_var(runt_vm *vm, runt_ptr p)
    
     var = (SPFLOAT *)cell->p.ud;
 
-    plumber_stream_append_data(pd, stream, varname, strlen(varname), var, 0);
+    plumber_stream_append_data(pd, 
+        stream, varname, strlen(varname), var, 0, PTYPE_USERDATA);
 
     plumber_ftmap_delete(pd, 0);
     plumber_ftmap_add_userdata(pd, varname, var);
@@ -413,6 +417,9 @@ static runt_int plumb_write(runt_vm *vm, runt_ptr p)
     ud.pd = pd;
     ud.stream = stream;
     pd->recompile = 0; 
+    if(pd->showprog) {
+        sp_progress_init(pd->sp, pd->prog);
+    }
     sp_process(pd->sp, &ud, process);
 
     return RUNT_OK;
@@ -608,6 +615,23 @@ static runt_int plumb_append(runt_vm *vm, runt_ptr p)
     return RUNT_OK;
 }
 
+static runt_int plumb_prog(runt_vm *vm, runt_ptr p)
+{
+    runt_int rc;
+    plumber_data *pd;
+    plumber_stream *stream;
+
+    rc = get_plumber_data(vm, &pd);
+    RUNT_ERROR_CHECK(rc);
+    rc = get_plumber_stream(vm, &stream);
+    RUNT_ERROR_CHECK(rc);
+    
+    pd->showprog = 1;
+
+    sp_progress_create(&pd->prog);
+    return RUNT_OK;
+}
+
 runt_int runt_load_plumber(runt_vm *vm)
 {
     runt_word_define(vm, "plumb_new", 9, plumb_new);
@@ -627,6 +651,7 @@ runt_int runt_load_plumber(runt_vm *vm)
     runt_word_define(vm, "plumb_ftmap", 11, plumb_ftmap);
     runt_word_define(vm, "plumb_ftsize", 12, plumb_ftsize);
     runt_word_define(vm, "plumb_append", 12, plumb_append);
+    runt_word_define(vm, "plumb_prog", 10, plumb_prog);
     return RUNT_OK;
 }
 
