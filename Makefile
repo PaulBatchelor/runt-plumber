@@ -1,4 +1,4 @@
-LIBS = -lsporth -lsoundpipe -lsndfile -lm -ldl -ljack -lrunt -lpthread
+LIBS = -lsporth -lsoundpipe -lsndfile -lm -ldl -lrunt -lpthread
 CFLAGS = -fPIC -O3 -Wall -ansi -g
 
 # Local Runt
@@ -9,7 +9,7 @@ OBJ = stream.o plumber.o
 
 NAME = plumber
 
-default: librunt_$(NAME).a rntplumber $(NAME).so
+default: librunt_$(NAME).a rntplumber 
 
 librunt_$(NAME).a: $(OBJ)
 	$(AR) rcs $@ $(OBJ)
@@ -20,8 +20,8 @@ rntplumber: parse.c $(OBJ)
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-plumber.so: plugin.o $(OBJ)
-	$(LD) -shared $(OBJ) plugin.o -o $@ $(LIBS)
+# plumber.so: plugin.o $(OBJ)
+# 	$(LD) $(OBJ) plugin.o -o $@ $(LIBS)
 
 install: librunt_$(NAME).a rntplumber
 	mkdir -p ~/.runt/lib
@@ -32,7 +32,6 @@ install: librunt_$(NAME).a rntplumber
 	cp runt_plumber.h ~/.runt/include
 	cp plumbstream.h ~/.runt/include
 	cp rnt$(NAME) ~/.runt/bin
-	cp $(NAME).so ~/.runt/plugins
 
 clean: 
 	rm -rf librunt_$(NAME).a $(OBJ) 

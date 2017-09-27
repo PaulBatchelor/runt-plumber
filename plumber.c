@@ -4,7 +4,6 @@
 #include <soundpipe.h>
 #include <sporth.h>
 #include <string.h>
-#include <jack/jack.h>
 #include <stdlib.h>
 
 #include "plumbstream.h"
